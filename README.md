@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/camelmailer)](https://pypi.org/project/camelmailer/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-The official Python SDK for [CamelMailer](https://camelmailer.com) — open-source transactional email.
+The official Python SDK for [Camelmailer](https://camelmailer.com) — open-source transactional email.
 
 Fully typed (`py.typed`), sync **and** async, one dependency (`httpx`), Python 3.9+.
 
@@ -34,7 +34,7 @@ The API key is a **server API key** (header `X-Server-API-Key`). If you don't pa
 
 ## Self-hosted / custom instance
 
-The default base URL is the CamelMailer cloud (`https://app.camelmailer.com`).
+The default base URL is the Camelmailer cloud (`https://app.camelmailer.com`).
 Point the client at your own instance:
 
 ```python

@@ -5,11 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "camelmailer"
 dynamic = ["version"]
-description = "Python SDK for CamelMailer — open-source transactional email"
+description = "Python SDK for Camelmailer — open-source transactional email"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
-authors = [{ name = "CamelMailer contributors" }]
+authors = [{ name = "Camelmailer contributors" }]
 keywords = ["email", "transactional", "camelmailer", "smtp", "api"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -47,6 +47,12 @@ asyncio_default_fixture_loop_scope = "function"
 line-length = 100
 target-version = "py39"
 src = ["src", "tests"]
+# Ruff 0.16 started formatting Python inside Markdown code blocks, which
+# reflows the README's examples into a shape that reads worse than the one
+# written for a reader (a single dict argument gets pushed onto its own
+# indented line). The examples are documentation, so the formatter stays
+# on the source tree.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4", "RUF"]
