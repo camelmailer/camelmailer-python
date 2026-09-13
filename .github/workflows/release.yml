@@ -9,7 +9,10 @@ jobs:
     name: Build & publish to PyPI
     runs-on: ubuntu-latest
     permissions:
+      # The OIDC identity of this workflow is the credential. PyPI trusts it
+      # by repository and by this file's name, so there is no token here.
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,17 +23,18 @@ jobs:
           pip install build twine
           python -m build
           twine check dist/*
-      - name: Publish to PyPI
-        env:
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Refuse a tag that disagrees with the package version
         run: |
-          if [ -z "$PYPI_API_TOKEN" ]; then
-            echo "PYPI_API_TOKEN secret not configured — skipping publish."
-            exit 0
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(python -c 'import re,pathlib; print(re.search(r"\"(.+)\"", pathlib.Path("src/camelmailer/_version.py").read_text()).group(1))')"
+          if [ "$tag" != "$version" ]; then
+            echo "tag $GITHUB_REF_NAME does not match __version__ $version" >&2
+            exit 1
           fi
-          twine upload --non-interactive -u __token__ -p "$PYPI_API_TOKEN" dist/*
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
