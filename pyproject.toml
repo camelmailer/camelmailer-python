@@ -5,11 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "camelmailer"
 dynamic = ["version"]
-description = "Python SDK for CamelMailer — open-source transactional email"
+description = "Python SDK for Camelmailer — open-source transactional email"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
-authors = [{ name = "CamelMailer contributors" }]
+authors = [{ name = "Camelmailer contributors" }]
 keywords = ["email", "transactional", "camelmailer", "smtp", "api"]
 classifiers = [
   "Development Status :: 4 - Beta",
