@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from .._transport import AsyncTransport, SyncTransport
-from ..types import CampaignCreateParams, CampaignUpdateParams
+from ..types import CampaignCreateParams, CampaignDraftParams, CampaignUpdateParams
 
 _BASE = "/api/v2/server/campaigns"
 _STREAMS = "/api/v2/server/streams"
@@ -14,8 +14,9 @@ _STREAMS = "/api/v2/server/streams"
 class Campaigns:
     """A campaign is content plus an audience.
 
-    Creating one leaves it a ``draft``; scheduling and sending are separate
-    calls, so nothing goes out as a side effect of writing it.
+    There are two ways to create one and they behave differently:
+    :meth:`create_draft` writes it and waits, while :meth:`create_and_send`
+    expands it to the stream's subscribers before the call returns.
     """
 
     def __init__(self, transport: SyncTransport) -> None:
@@ -42,12 +43,35 @@ class Campaigns:
             self._transport.request("GET", f"{_STREAMS}/{permalink}/campaigns/{campaign_id}"),
         )
 
-    def create(self, permalink: str, params: CampaignCreateParams) -> dict[str, Any]:
-        """Create a campaign on a broadcast stream. It starts as a draft."""
+    def create_draft(self, params: CampaignDraftParams) -> dict[str, Any]:
+        """Create a campaign without sending it.
+
+        Name the audience with ``stream``. Leave ``scheduled_at`` out for a
+        ``draft``, set it for ``scheduled``, or pass ``send_now`` to send on
+        creation.
+        """
+        return cast(dict[str, Any], self._transport.request("POST", _BASE, json=params))
+
+    def create_and_send(self, permalink: str, params: CampaignCreateParams) -> dict[str, Any]:
+        """Create a campaign on a broadcast stream and send it immediately.
+
+        The send starts before this call returns, so there is no draft to
+        review and no schedule to set. Use :meth:`create_draft` when the
+        campaign should wait.
+        """
         return cast(
             dict[str, Any],
             self._transport.request("POST", f"{_STREAMS}/{permalink}/campaigns", json=params),
         )
+
+    def create(self, permalink: str, params: CampaignCreateParams) -> dict[str, Any]:
+        """Deprecated alias of :meth:`create_and_send`.
+
+        Named ``create`` and documented as creating a draft in 0.2.0, which
+        was wrong: it sends to the stream's subscribers straight away. For a
+        draft, use :meth:`create_draft`.
+        """
+        return self.create_and_send(permalink, params)
 
     def update(self, campaign_id: int, params: CampaignUpdateParams) -> dict[str, Any]:
         """Update a draft or scheduled campaign.
@@ -103,12 +127,20 @@ class AsyncCampaigns:
             await self._transport.request("GET", f"{_STREAMS}/{permalink}/campaigns/{campaign_id}"),
         )
 
-    async def create(self, permalink: str, params: CampaignCreateParams) -> dict[str, Any]:
-        """Create a campaign on a broadcast stream. It starts as a draft."""
+    async def create_draft(self, params: CampaignDraftParams) -> dict[str, Any]:
+        """Create a campaign without sending it. See :meth:`Campaigns.create_draft`."""
+        return cast(dict[str, Any], await self._transport.request("POST", _BASE, json=params))
+
+    async def create_and_send(self, permalink: str, params: CampaignCreateParams) -> dict[str, Any]:
+        """Create and send immediately. See :meth:`Campaigns.create_and_send`."""
         return cast(
             dict[str, Any],
             await self._transport.request("POST", f"{_STREAMS}/{permalink}/campaigns", json=params),
         )
+
+    async def create(self, permalink: str, params: CampaignCreateParams) -> dict[str, Any]:
+        """Deprecated alias of :meth:`create_and_send`. See :meth:`Campaigns.create`."""
+        return await self.create_and_send(permalink, params)
 
     async def update(self, campaign_id: int, params: CampaignUpdateParams) -> dict[str, Any]:
         """Update a draft or scheduled campaign. See :meth:`Campaigns.update`."""

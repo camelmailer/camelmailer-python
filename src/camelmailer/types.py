@@ -222,12 +222,17 @@ __all__ = [
     "Address",
     "AddressObject",
     "Attachment",
+    "CampaignCreateParams",
+    "CampaignDraftParams",
+    "CampaignUpdateParams",
     "DmarcRecord",
     "DmarcReport",
     "DmarcReportDetail",
     "DmarcReportList",
     "DmarcSourceSummary",
     "DmarcSummary",
+    "LayoutCreateParams",
+    "LayoutUpdateParams",
     "Message",
     "MessageList",
     "Pagination",
@@ -237,25 +242,48 @@ __all__ = [
     "SendWithTemplateParams",
     "Stats",
     "StreamCreateParams",
+    "StreamSendParams",
     "StreamUpdateParams",
+    "SubscriberAddParams",
     "TemplateCreateParams",
     "TemplateUpdateParams",
 ]
 
 
-class CampaignCreateParams(TypedDict, total=False):
-    """Parameters for creating a campaign. ``name`` is required."""
-
-    name: str
-    # Bare From address; the broadcast path authorizes its domain.
-    from_address: str
-    subject: str
-    html_body: str
-    text_body: str
-
-
-# The API field is `from`, which is a Python keyword, so the TypedDict is
+# The API field is `from`, which is a Python keyword, so these TypedDicts are
 # built functionally rather than with the class syntax.
+CampaignCreateParams = TypedDict(
+    "CampaignCreateParams",
+    {
+        "name": str,
+        # Bare From address; the broadcast path authorizes its domain.
+        "from": str,
+        "subject": str,
+        "html_body": str,
+        "text_body": str,
+    },
+    total=False,
+)
+
+CampaignDraftParams = TypedDict(
+    "CampaignDraftParams",
+    {
+        # Permalink of the broadcast stream to send to.
+        "stream": str,
+        "from": str,
+        "name": str,
+        "subject": str,
+        "html_body": str,
+        "text_body": str,
+        # RFC 3339 send time; arms the campaign as `scheduled`.
+        "scheduled_at": str,
+        # Send on creation, overriding `scheduled_at`.
+        "send_now": bool,
+    },
+    total=False,
+)
+
+
 CampaignUpdateParams = TypedDict(
     "CampaignUpdateParams",
     {
