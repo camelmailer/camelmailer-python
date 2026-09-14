@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-14
+
+### Added
+
+- `send_with_template()` and `send_with_template_batch()` take an
+  ``idempotency_key``, sync and async. The API claims all four send
+  endpoints, so leaving it off these two made a template send the one thing
+  a retry could duplicate.
+
 ## [0.2.1] - 2026-09-14
 
 ### Fixed
@@ -96,7 +105,8 @@ this SDK is written from, although the server has served them since v0.5.
   `NotFoundError`, `RateLimitError`.
 - Full type hints, TypedDict request/response shapes, `py.typed`.
 
-[Unreleased]: https://github.com/camelmailer/camelmailer-python/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/camelmailer/camelmailer-python/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/camelmailer/camelmailer-python/releases/tag/v0.2.2
 [0.2.1]: https://github.com/camelmailer/camelmailer-python/releases/tag/v0.2.1
 [0.2.0]: https://github.com/camelmailer/camelmailer-python/releases/tag/v0.2.0
 [0.1.0]: https://github.com/camelmailer/camelmailer-python/releases/tag/v0.1.0
