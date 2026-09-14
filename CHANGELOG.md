@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-14
+
+### Fixed
+
+- `CampaignCreateParams` declared the From address as `from_address`. The
+  API field is `from`, so a caller following the type sent a key the server
+  ignores and the create was refused with `ValidationError: param is missing
+  or the value is empty: from`. Campaign creation in 0.2.0 could not
+  succeed. The TypedDict is now built functionally with the real field name,
+  the way `CampaignUpdateParams` already was.
+- `campaigns.create()` was documented as creating a draft. It posts to
+  `POST /streams/{permalink}/campaigns`, which creates the campaign with
+  status `sending` and expands it to the stream's subscribers before the
+  call returns. Following the documentation would broadcast when you meant
+  to compose.
+- `types.__all__` listed none of the parameter types added in 0.2.0.
+
+### Added
+
+- `campaigns.create_draft()` for the route that actually plans a campaign
+  (`POST /campaigns`): it names the stream in the body and honours
+  `scheduled_at` and `send_now`. Sync and async.
+- `campaigns.create_and_send()`, the accurate name for the send-immediately
+  route.
+- `CampaignDraftParams`.
+
+### Deprecated
+
+- `campaigns.create()`, in favour of `campaigns.create_and_send()`. It still
+  calls the same endpoint, so existing code keeps working.
+
 ## [0.2.0] - 2026-09-14
 
 ### Fixed
@@ -65,5 +96,7 @@ this SDK is written from, although the server has served them since v0.5.
   `NotFoundError`, `RateLimitError`.
 - Full type hints, TypedDict request/response shapes, `py.typed`.
 
-[Unreleased]: https://github.com/camelmailer/camelmailer-python/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/camelmailer/camelmailer-python/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/camelmailer/camelmailer-python/releases/tag/v0.2.1
+[0.2.0]: https://github.com/camelmailer/camelmailer-python/releases/tag/v0.2.0
 [0.1.0]: https://github.com/camelmailer/camelmailer-python/releases/tag/v0.1.0

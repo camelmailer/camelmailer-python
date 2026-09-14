@@ -159,15 +159,28 @@ result = client.emails.send_to_stream(
 # 1000 are skipped, so a larger audience wants a campaign.
 ```
 
-A campaign is content plus an audience, and it only leaves `draft`
-deliberately:
+A campaign is content plus an audience. There are two ways to create one
+and they behave differently, so pick deliberately: `create_draft` writes it
+and waits, `create_and_send` expands it to the stream's subscribers before
+the call returns.
 
 ```python
-created = client.campaigns.create(
-    "product-news",
-    {"name": "September newsletter", "subject": "What shipped in September"},
+created = client.campaigns.create_draft(
+    {
+        "stream": "product-news",
+        "name": "September newsletter",
+        "from": "news@acme.com",
+        "subject": "What shipped in September",
+        # "scheduled_at": "2026-10-01T08:00:00Z",  # arms it as `scheduled`
+    }
 )
 campaign_id = created["campaign"]["id"]
+
+# Goes out on the spot, no draft and no schedule:
+client.campaigns.create_and_send(
+    "product-news",
+    {"name": "Status update", "from": "news@acme.com", "text_body": "All clear."},
+)
 
 client.campaigns.update(campaign_id, {"scheduled_at": "2026-10-01T08:00:00Z"})  # -> scheduled
 client.campaigns.update(campaign_id, {"scheduled_at": None})                     # -> draft
