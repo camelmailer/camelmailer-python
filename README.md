@@ -115,6 +115,103 @@ client.streams.update("broadcasts", {"name": "Newsletter"})
 client.streams.archive("broadcasts")
 ```
 
+## Retrying safely
+
+Pass an idempotency key and a retry replays the original result instead of
+queuing a second copy. Keys are scoped to the server, a completed result is
+kept for 24 hours, and reusing one for different content raises
+`ValidationError` rather than being silently ignored.
+
+```python
+client.emails.send(
+    {"from": "billing@acme.com", "to": ["ada@example.com"], "subject": "Your receipt"},
+    idempotency_key=f"order-{order.id}",
+)
+client.emails.send_batch(messages, idempotency_key=f"nightly-{today}")
+```
+
+A server can also carry a 30-day send allowance. When it runs out the API
+raises `SendLimitExceededError` **before** storing anything, so nothing was
+queued. It subclasses `RateLimitError`, so code that already catches that
+keeps working.
+
+## Broadcast: subscribers and campaigns
+
+Subscribers belong to one stream rather than to a global list, and a
+broadcast to an address that is not subscribed is refused.
+
+```python
+client.subscribers.add("product-news", {"address": "ada@example.com"})
+client.subscribers.import_("product-news", ["ada@example.com", "grace@example.com"])
+client.subscribers.list("product-news")
+client.subscribers.complaint("product-news", "ada@example.com")  # suppress + unsubscribe
+client.subscribers.remove("product-news", "ada@example.com")
+```
+
+The same content to everyone at once, for small audiences:
+
+```python
+result = client.emails.send_to_stream(
+    "product-news",
+    {"from": "news@acme.com", "subject": "What shipped", "html_body": "<p>Hello</p>"},
+)
+# {"queued": ..., "skipped": ...} — recipients past the per-request cap of
+# 1000 are skipped, so a larger audience wants a campaign.
+```
+
+A campaign is content plus an audience, and it only leaves `draft`
+deliberately:
+
+```python
+created = client.campaigns.create(
+    "product-news",
+    {"name": "September newsletter", "subject": "What shipped in September"},
+)
+campaign_id = created["campaign"]["id"]
+
+client.campaigns.update(campaign_id, {"scheduled_at": "2026-10-01T08:00:00Z"})  # -> scheduled
+client.campaigns.update(campaign_id, {"scheduled_at": None})                     # -> draft
+client.campaigns.send(campaign_id)
+client.campaigns.cancel(campaign_id)
+
+detail = client.campaigns.get(campaign_id)
+detail["stats"]  # delivered, failed, opened, clicked, unsubscribed
+```
+
+## Layouts
+
+A layout wraps every template that uses it. The HTML wrapper has to embed
+the body raw as `{{{ content }}}`; escaped interpolation would show the
+message markup as text, and the API refuses it.
+
+```python
+client.layouts.create(
+    {"name": "Default", "html_wrapper": "<html><body>{{{ content }}}</body></html>"}
+)
+client.layouts.upload_logo("default", "data:image/png;base64,iVBORw0KGgo=")
+client.layouts.list()
+client.layouts.delete("default")
+```
+
+## Inbound and held mail
+
+```python
+client.inbound.list(stream="support-inbox", status="Held")
+client.inbound.get(55)
+client.inbound.retry(55)   # back on the delivery queue
+client.inbound.bypass(55)  # release past the hold
+```
+
+## Request log and tags
+
+Useful when a send did not arrive and the question is whether the request
+ever reached the API, and with what answer.
+
+```python
+client.logs.list(status="4xx", method="POST")
+client.logs.tags()  # [{"tag": "receipt", "count": 91}, ...]
+```
+
 ## Stats & bounces
 
 ```python

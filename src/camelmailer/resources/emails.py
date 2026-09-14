@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from .._transport import AsyncTransport, SyncTransport, build_query
-from ..types import MessageList, SendParams, SendResult, SendWithTemplateParams
+from .._transport import AsyncTransport, SyncTransport, build_query, idempotency_headers
+from ..types import MessageList, SendParams, SendResult, SendWithTemplateParams, StreamSendParams
 
 _BASE = "/api/v2/server/messages"
 
@@ -14,15 +14,49 @@ class Emails:
     def __init__(self, transport: SyncTransport) -> None:
         self._transport = transport
 
-    def send(self, params: SendParams) -> SendResult:
-        """Send a message; queues one message per recipient."""
-        return cast(SendResult, self._transport.request("POST", _BASE, json=params))
+    def send(self, params: SendParams, *, idempotency_key: str | None = None) -> SendResult:
+        """Send a message; queues one message per recipient.
 
-    def send_batch(self, messages: list[SendParams]) -> dict[str, Any]:
+        Pass ``idempotency_key`` and a retry replays the original result
+        instead of queuing a second copy. Keys are scoped to the server and
+        a completed result is kept for 24 hours; reusing one for different
+        content raises ``ValidationError``.
+        """
+        return cast(
+            SendResult,
+            self._transport.request(
+                "POST", _BASE, json=params, headers=idempotency_headers(idempotency_key)
+            ),
+        )
+
+    def send_batch(
+        self, messages: list[SendParams], *, idempotency_key: str | None = None
+    ) -> dict[str, Any]:
         """Send a batch of messages; returns one result per entry."""
         return cast(
             dict[str, Any],
-            self._transport.request("POST", f"{_BASE}/batch", json={"messages": messages}),
+            self._transport.request(
+                "POST",
+                f"{_BASE}/batch",
+                json=messages,
+                headers=idempotency_headers(idempotency_key),
+            ),
+        )
+
+    def send_to_stream(self, permalink: str, params: StreamSendParams) -> dict[str, Any]:
+        """Send the same content to every subscriber of a broadcast stream.
+
+        Either give ``subject`` with a body, or a ``template`` permalink with
+        an optional ``template_model``. The response counts what was
+        ``queued`` against what was ``skipped``: recipients past the
+        per-request cap of 1000 are skipped, so a larger audience wants a
+        campaign.
+        """
+        return cast(
+            dict[str, Any],
+            self._transport.request(
+                "POST", f"/api/v2/server/streams/{permalink}/send", json=params
+            ),
         )
 
     def send_with_template(self, params: SendWithTemplateParams) -> dict[str, Any]:
@@ -36,9 +70,7 @@ class Emails:
         """Send a stored template to many recipients in one call."""
         return cast(
             dict[str, Any],
-            self._transport.request(
-                "POST", f"{_BASE}/with_template/batch", json={"messages": messages}
-            ),
+            self._transport.request("POST", f"{_BASE}/with_template/batch", json=messages),
         )
 
     def get(self, message_id: int) -> dict[str, Any]:
@@ -98,15 +130,42 @@ class AsyncEmails:
     def __init__(self, transport: AsyncTransport) -> None:
         self._transport = transport
 
-    async def send(self, params: SendParams) -> SendResult:
-        """Send a message; queues one message per recipient."""
-        return cast(SendResult, await self._transport.request("POST", _BASE, json=params))
+    async def send(self, params: SendParams, *, idempotency_key: str | None = None) -> SendResult:
+        """Send a message; queues one message per recipient.
 
-    async def send_batch(self, messages: list[SendParams]) -> dict[str, Any]:
+        See :meth:`Emails.send` for what ``idempotency_key`` does.
+        """
+        return cast(
+            SendResult,
+            await self._transport.request(
+                "POST", _BASE, json=params, headers=idempotency_headers(idempotency_key)
+            ),
+        )
+
+    async def send_batch(
+        self, messages: list[SendParams], *, idempotency_key: str | None = None
+    ) -> dict[str, Any]:
         """Send a batch of messages; returns one result per entry."""
         return cast(
             dict[str, Any],
-            await self._transport.request("POST", f"{_BASE}/batch", json={"messages": messages}),
+            await self._transport.request(
+                "POST",
+                f"{_BASE}/batch",
+                json=messages,
+                headers=idempotency_headers(idempotency_key),
+            ),
+        )
+
+    async def send_to_stream(self, permalink: str, params: StreamSendParams) -> dict[str, Any]:
+        """Send to every subscriber of a broadcast stream.
+
+        See :meth:`Emails.send_to_stream`.
+        """
+        return cast(
+            dict[str, Any],
+            await self._transport.request(
+                "POST", f"/api/v2/server/streams/{permalink}/send", json=params
+            ),
         )
 
     async def send_with_template(self, params: SendWithTemplateParams) -> dict[str, Any]:
@@ -122,9 +181,7 @@ class AsyncEmails:
         """Send a stored template to many recipients in one call."""
         return cast(
             dict[str, Any],
-            await self._transport.request(
-                "POST", f"{_BASE}/with_template/batch", json={"messages": messages}
-            ),
+            await self._transport.request("POST", f"{_BASE}/with_template/batch", json=messages),
         )
 
     async def get(self, message_id: int) -> dict[str, Any]:

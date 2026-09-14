@@ -43,7 +43,15 @@ class NotFoundError(CamelMailerError):
 
 
 class RateLimitError(CamelMailerError):
-    """Too many requests (429)."""
+    """Too many requests (429), including a spent send allowance."""
+
+
+class SendLimitExceededError(RateLimitError):
+    """The server's 30-day send allowance is used up (429).
+
+    Raised before anything is stored, so nothing was queued and the retry
+    is yours to schedule.
+    """
 
 
 _CODE_TO_ERROR: dict[str, type[CamelMailerError]] = {
@@ -55,6 +63,10 @@ _CODE_TO_ERROR: dict[str, type[CamelMailerError]] = {
     "NotFound": NotFoundError,
     "RateLimited": RateLimitError,
     "RateLimitExceeded": RateLimitError,
+    "SendLimitExceeded": SendLimitExceededError,
+    # An Idempotency-Key reused for different content, or sent twice on one
+    # request. The server answers 409.
+    "InvalidIdempotentRequest": ValidationError,
 }
 
 _STATUS_TO_ERROR: dict[int, type[CamelMailerError]] = {
