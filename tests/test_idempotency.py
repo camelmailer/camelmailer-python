@@ -101,3 +101,42 @@ async def test_async_send_carries_the_key(aclient: camelmailer.AsyncCamelMailer)
     )
     await aclient.emails.send(SEND, idempotency_key="k")
     assert route.calls.last.request.headers["Idempotency-Key"] == "k"
+
+
+@respx.mock
+def test_template_send_takes_a_key_too(client: camelmailer.CamelMailer) -> None:
+    route = respx.post(f"{MESSAGES}/with_template").mock(
+        return_value=httpx.Response(200, json=envelope({"message_id": 1}))
+    )
+    client.emails.send_with_template({**SEND, "template": "welcome"}, idempotency_key="welcome-ada")
+    # The API claims all four send endpoints, so a template send is as
+    # replayable as a plain one.
+    assert route.calls.last.request.headers["Idempotency-Key"] == "welcome-ada"
+
+
+@respx.mock
+def test_template_batch_takes_a_key_too(client: camelmailer.CamelMailer) -> None:
+    route = respx.post(f"{MESSAGES}/with_template/batch").mock(
+        return_value=httpx.Response(200, json=envelope({"messages": []}))
+    )
+    client.emails.send_with_template_batch(
+        [{**SEND, "template": "welcome"}], idempotency_key="welcome-nightly"
+    )
+    assert route.calls.last.request.headers["Idempotency-Key"] == "welcome-nightly"
+
+
+@respx.mock
+async def test_async_template_sends_take_a_key(aclient: camelmailer.AsyncCamelMailer) -> None:
+    route = respx.post(f"{MESSAGES}/with_template").mock(
+        return_value=httpx.Response(200, json=envelope({"message_id": 1}))
+    )
+    await aclient.emails.send_with_template({**SEND, "template": "welcome"}, idempotency_key="a")
+    assert route.calls.last.request.headers["Idempotency-Key"] == "a"
+
+    batch = respx.post(f"{MESSAGES}/with_template/batch").mock(
+        return_value=httpx.Response(200, json=envelope({"messages": []}))
+    )
+    await aclient.emails.send_with_template_batch(
+        [{**SEND, "template": "welcome"}], idempotency_key="b"
+    )
+    assert batch.calls.last.request.headers["Idempotency-Key"] == "b"

@@ -59,18 +59,35 @@ class Emails:
             ),
         )
 
-    def send_with_template(self, params: SendWithTemplateParams) -> dict[str, Any]:
-        """Render a stored template against ``template_model``, then send."""
+    def send_with_template(
+        self, params: SendWithTemplateParams, *, idempotency_key: str | None = None
+    ) -> dict[str, Any]:
+        """Render a stored template against ``template_model``, then send.
+
+        See :meth:`Emails.send` for what ``idempotency_key`` does.
+        """
         return cast(
             dict[str, Any],
-            self._transport.request("POST", f"{_BASE}/with_template", json=params),
+            self._transport.request(
+                "POST",
+                f"{_BASE}/with_template",
+                json=params,
+                headers=idempotency_headers(idempotency_key),
+            ),
         )
 
-    def send_with_template_batch(self, messages: list[SendWithTemplateParams]) -> dict[str, Any]:
+    def send_with_template_batch(
+        self, messages: list[SendWithTemplateParams], *, idempotency_key: str | None = None
+    ) -> dict[str, Any]:
         """Send a stored template to many recipients in one call."""
         return cast(
             dict[str, Any],
-            self._transport.request("POST", f"{_BASE}/with_template/batch", json=messages),
+            self._transport.request(
+                "POST",
+                f"{_BASE}/with_template/batch",
+                json=messages,
+                headers=idempotency_headers(idempotency_key),
+            ),
         )
 
     def get(self, message_id: int) -> dict[str, Any]:
@@ -168,20 +185,32 @@ class AsyncEmails:
             ),
         )
 
-    async def send_with_template(self, params: SendWithTemplateParams) -> dict[str, Any]:
+    async def send_with_template(
+        self, params: SendWithTemplateParams, *, idempotency_key: str | None = None
+    ) -> dict[str, Any]:
         """Render a stored template against ``template_model``, then send."""
         return cast(
             dict[str, Any],
-            await self._transport.request("POST", f"{_BASE}/with_template", json=params),
+            await self._transport.request(
+                "POST",
+                f"{_BASE}/with_template",
+                json=params,
+                headers=idempotency_headers(idempotency_key),
+            ),
         )
 
     async def send_with_template_batch(
-        self, messages: list[SendWithTemplateParams]
+        self, messages: list[SendWithTemplateParams], *, idempotency_key: str | None = None
     ) -> dict[str, Any]:
         """Send a stored template to many recipients in one call."""
         return cast(
             dict[str, Any],
-            await self._transport.request("POST", f"{_BASE}/with_template/batch", json=messages),
+            await self._transport.request(
+                "POST",
+                f"{_BASE}/with_template/batch",
+                json=messages,
+                headers=idempotency_headers(idempotency_key),
+            ),
         )
 
     async def get(self, message_id: int) -> dict[str, Any]:

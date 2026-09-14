@@ -130,6 +130,9 @@ client.emails.send(
 client.emails.send_batch(messages, idempotency_key=f"nightly-{today}")
 ```
 
+All four send methods take it: `send`, `send_batch`, `send_with_template`
+and `send_with_template_batch`.
+
 A server can also carry a 30-day send allowance. When it runs out the API
 raises `SendLimitExceededError` **before** storing anything, so nothing was
 queued. It subclasses `RateLimitError`, so code that already catches that
