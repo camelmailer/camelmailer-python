@@ -11,16 +11,26 @@ import httpx
 from ._transport import DEFAULT_BASE_URL, AsyncTransport, SyncTransport
 from .resources import (
     AsyncBounces,
+    AsyncCampaigns,
     AsyncDmarc,
     AsyncEmails,
+    AsyncInbound,
+    AsyncLayouts,
+    AsyncLogs,
     AsyncStats,
     AsyncStreams,
+    AsyncSubscribers,
     AsyncTemplates,
     Bounces,
+    Campaigns,
     Dmarc,
     Emails,
+    Inbound,
+    Layouts,
+    Logs,
     Stats,
     Streams,
+    Subscribers,
     Templates,
 )
 
@@ -68,6 +78,11 @@ class CamelMailer:
         self.streams = Streams(self._transport)
         self.stats = Stats(self._transport)
         self.bounces = Bounces(self._transport)
+        self.campaigns = Campaigns(self._transport)
+        self.subscribers = Subscribers(self._transport)
+        self.layouts = Layouts(self._transport)
+        self.inbound = Inbound(self._transport)
+        self.logs = Logs(self._transport)
         self.dmarc = Dmarc(self._transport)
 
     @property
@@ -120,6 +135,11 @@ class AsyncCamelMailer:
         self.streams = AsyncStreams(self._transport)
         self.stats = AsyncStats(self._transport)
         self.bounces = AsyncBounces(self._transport)
+        self.campaigns = AsyncCampaigns(self._transport)
+        self.subscribers = AsyncSubscribers(self._transport)
+        self.layouts = AsyncLayouts(self._transport)
+        self.inbound = AsyncInbound(self._transport)
+        self.logs = AsyncLogs(self._transport)
         self.dmarc = AsyncDmarc(self._transport)
 
     @property

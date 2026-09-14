@@ -63,7 +63,9 @@ def test_send_batch(client: camelmailer.CamelMailer) -> None:
         [{"from": "a@acme.com", "to": ["b@example.com"], "subject": "Hi", "text_body": "Yo"}]
     )
     assert result == {"results": [SEND_RESULT]}
-    assert last_request_json(route)["messages"][0]["from"] == "a@acme.com"
+    # A bare array, not {"messages": [...]}: the endpoint deserializes
+    # into Vec<SendMessage> and rejects a map outright.
+    assert last_request_json(route)[0]["from"] == "a@acme.com"
 
 
 @respx.mock
@@ -93,7 +95,7 @@ def test_send_with_template_batch(client: camelmailer.CamelMailer) -> None:
     client.emails.send_with_template_batch(
         [{"from": "hello@acme.com", "to": ["ada@example.com"], "template": "welcome"}]
     )
-    assert last_request_json(route)["messages"][0]["template"] == "welcome"
+    assert last_request_json(route)[0]["template"] == "welcome"
 
 
 @respx.mock
@@ -187,7 +189,7 @@ async def test_async_send_batch(aclient: camelmailer.AsyncCamelMailer) -> None:
         return_value=httpx.Response(200, json=envelope({"results": []}))
     )
     await aclient.emails.send_batch([{"from": "a@acme.com", "to": ["b@example.com"]}])
-    assert "messages" in last_request_json(route)
+    assert isinstance(last_request_json(route), list)
 
 
 @respx.mock

@@ -45,6 +45,16 @@ def _parse(response: httpx.Response) -> Any:
     )
 
 
+def idempotency_headers(idempotency_key: str | None) -> dict[str, str]:
+    """The header that makes a send replayable.
+
+    The key travels as a header rather than in the body, because the body is
+    what the server hashes to recognise the same request. A retry with the
+    same key replays the stored result instead of queuing a second copy.
+    """
+    return {"Idempotency-Key": idempotency_key} if idempotency_key else {}
+
+
 def build_query(**kwargs: Any) -> dict[str, Any]:
     """Drop ``None`` values and serialize datetimes to ISO 8601 strings."""
     query: dict[str, Any] = {}
@@ -89,13 +99,14 @@ class SyncTransport(_TransportBase):
         *,
         params: dict[str, Any] | None = None,
         json: Any | None = None,
+        headers: dict[str, str] | None = None,
     ) -> Any:
         response = self._client.request(
             method,
             self._url(path),
             params=params,
             json=json,
-            headers=self.headers,
+            headers={**self.headers, **(headers or {})},
         )
         return _parse(response)
 
@@ -123,13 +134,14 @@ class AsyncTransport(_TransportBase):
         *,
         params: dict[str, Any] | None = None,
         json: Any | None = None,
+        headers: dict[str, str] | None = None,
     ) -> Any:
         response = await self._client.request(
             method,
             self._url(path),
             params=params,
             json=json,
-            headers=self.headers,
+            headers={**self.headers, **(headers or {})},
         )
         return _parse(response)
 

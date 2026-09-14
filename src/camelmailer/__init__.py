@@ -18,6 +18,7 @@ from .exceptions import (
     CamelMailerError,
     NotFoundError,
     RateLimitError,
+    SendLimitExceededError,
     ValidationError,
 )
 
@@ -31,6 +32,7 @@ __all__ = [
     "CamelMailerError",
     "NotFoundError",
     "RateLimitError",
+    "SendLimitExceededError",
     "ValidationError",
     "__version__",
     "exceptions",

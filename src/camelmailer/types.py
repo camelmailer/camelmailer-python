@@ -241,3 +241,77 @@ __all__ = [
     "TemplateCreateParams",
     "TemplateUpdateParams",
 ]
+
+
+class CampaignCreateParams(TypedDict, total=False):
+    """Parameters for creating a campaign. ``name`` is required."""
+
+    name: str
+    # Bare From address; the broadcast path authorizes its domain.
+    from_address: str
+    subject: str
+    html_body: str
+    text_body: str
+
+
+# The API field is `from`, which is a Python keyword, so the TypedDict is
+# built functionally rather than with the class syntax.
+CampaignUpdateParams = TypedDict(
+    "CampaignUpdateParams",
+    {
+        "name": Optional[str],
+        "from": str,
+        "subject": Optional[str],
+        "html_body": Optional[str],
+        "text_body": Optional[str],
+        # Three-valued: leave it out to keep the schedule, give a timestamp
+        # to move a draft to `scheduled`, pass None to clear it back to
+        # `draft`. None and "absent" mean different things here.
+        "scheduled_at": Optional[str],
+    },
+    total=False,
+)
+
+
+class SubscriberAddParams(TypedDict, total=False):
+    """Parameters for adding a subscriber. ``address`` is required."""
+
+    address: str
+    # "subscribed" (the default) or "unsubscribed".
+    status: str
+
+
+class LayoutCreateParams(TypedDict, total=False):
+    """Parameters for creating a layout.
+
+    ``name`` and ``html_wrapper`` are required, and ``html_wrapper`` must
+    embed the body raw as ``{{{ content }}}``.
+    """
+
+    name: str
+    permalink: str
+    html_wrapper: str
+    text_wrapper: str
+
+
+class LayoutUpdateParams(TypedDict, total=False):
+    """Parameters for updating a layout; only the given fields change."""
+
+    name: str
+    html_wrapper: str
+    text_wrapper: str
+
+
+StreamSendParams = TypedDict(
+    "StreamSendParams",
+    {
+        "from": str,
+        "subject": str,
+        "html_body": str,
+        "text_body": str,
+        # Permalink of a stored template to render for every recipient.
+        "template": str,
+        "template_model": dict[str, Any],
+    },
+    total=False,
+)
